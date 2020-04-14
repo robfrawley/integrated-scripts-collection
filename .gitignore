@@ -1,0 +1,5 @@
+/src/glances/bin
+/src/glances/include
+/src/glances/lib
+/src/glances/share
+/src/glances/.setup-glances.log
