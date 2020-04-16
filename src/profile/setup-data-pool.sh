@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ##
-## This file is part of the `src-run/bash-bright-library` package.
+## This file is part of the `src-run/raspberry-scripts-bash` package.
 ##
 ## (c) Rob Frawley 2nd <rmf@src.run>
 ##

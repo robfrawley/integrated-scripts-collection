@@ -2,4 +2,6 @@
 /src/glances/include
 /src/glances/lib
 /src/glances/share
-/src/glances/.setup-glances.log
+/src/glances/.glances-install.log
+/src/shellcheck/src/
+/src/shellcheck/.shellcheck-install.log
