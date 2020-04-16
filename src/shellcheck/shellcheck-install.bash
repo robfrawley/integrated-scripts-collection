@@ -31,6 +31,10 @@ function get_self_dirpath() {
   return 255
 }
 
+#
+# get available package version from cache
+#
+
 function get_cache_pkg_ver() {
   local name="${1}"
 
@@ -39,6 +43,10 @@ function get_cache_pkg_ver() {
     | cut -d' ' -f2 2> /dev/null
 }
 
+#
+# get installed package version
+#
+
 function get_local_pkg_ver() {
   local name="${1}"
 
@@ -46,6 +54,10 @@ function get_local_pkg_ver() {
     | grep -E '^Version: .+$' 2> /dev/null \
     | cut -d' ' -f2 2> /dev/null
 }
+
+#
+# install passed packages (if not already)
+#
 
 function apt_install_packages() {
     local -a package_names=("${@}")
@@ -72,7 +84,11 @@ function apt_install_packages() {
     done
 }
 
-function main() {
+#
+# perform glances install operation
+#
+
+function install() {
   local script_path
   local logger_path
 
@@ -140,4 +156,8 @@ function main() {
   rm "${logger_path}" 2>/dev/null
 }
 
-main
+#
+# invoke main sub routine
+#
+
+install

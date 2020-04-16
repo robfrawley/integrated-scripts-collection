@@ -30,6 +30,8 @@ function get_self_dirpath() {
 function main() {
   local logger_path
 
+  printf -- 'Working to clean up prior "glances" build files in "%s" ...\n' "${script_path}"
+
   if ! script_path="$(get_self_dirpath)"; then
     printf -- 'Failure to resolve locater executable to resolve path "%s" ... Exiting prematurely!\n' "${BASH_SOURCE[0]}"
     exit 255

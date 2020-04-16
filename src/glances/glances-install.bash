@@ -9,6 +9,10 @@
 ## file distributed with this source code.
 ##
 
+#
+# resolve real path to this script
+#
+
 function get_self_dirpath() {
   local locator_bin
   local located_scr
@@ -27,7 +31,11 @@ function get_self_dirpath() {
   return 255
 }
 
-function main() {
+#
+# perform glances install operation
+#
+
+function install() {
   local script_path
   local logger_path
 
@@ -45,7 +53,7 @@ function main() {
 
   "${script_path}/glances-remove.bash"
 
-  logger_path="${script_path}/.setup-glances.log"
+  logger_path="${script_path}/.glances-install.log"
 
   [[ ! -f ${logger_path} ]] && touch "${logger_path}"
 
@@ -83,4 +91,8 @@ function main() {
   rm "${logger_path}" 2> /dev/null
 }
 
-main
+#
+# invoke main sub routine
+#
+
+install
