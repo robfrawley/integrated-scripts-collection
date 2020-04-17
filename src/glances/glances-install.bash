@@ -116,7 +116,7 @@ function install() {
 
   printf -- 'Working to create virtual environment for "glances" using python (version %s) interpreter ... ' "$(python3 --version 2>&1 | cut -d' ' -f2)"
 
-  if python -m virtualenv -p python3 "${script_path}" &> "${logger_path}"; then
+  if python3 -m virtualenv -p python3 "${script_path}" &> "${logger_path}"; then
     printf -- '[success]\n'
   else
     printf -- '[failure]\nLogging file located at "%s" ... Exiting prematurely!\n' "${logger_path}"
