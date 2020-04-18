@@ -62,20 +62,20 @@ function get_local_pkg_ver() {
 function apt_install_packages() {
     local -a package_names=("${@}")
 
-    printf -- 'Working to install %d packages using apt package manager ...\n' "${#package_names[@]}"
+    printf -- '# Working to install %d system dependencies using apt package manager ...\n' "${#package_names[@]}"
 
     for p in "${package_names[@]}"; do
-      printf -- 'Working to install package "%s" (targeting version "%s") ... ' "${p}" "$(get_cache_pkg_ver "${p}")"
+      printf -- '  - Working to install package "%s" (targeting version "%s") ... ' "${p}" "$(get_cache_pkg_ver "${p}")"
 
       if dpkg -s "${p}" 2> /dev/null | grep installed &> /dev/null; then
-        printf -- '[skipped] (found version "%s")\n' "$(get_local_pkg_ver "${p}")"
+        printf -- '[SKIPPED] (found version "%s")\n' "$(get_local_pkg_ver "${p}")"
       else
         export DEBIAN_FRONTEND=noninteractive
 
         if sudo apt install "${p}" --assume-yes --quiet &> "${logger_path}"; then
-          printf -- '[success] (found version "%s")\n' "$(get_local_pkg_ver "${p}")"
+          printf -- '[SUCCESS] (found version "%s")\n' "$(get_local_pkg_ver "${p}")"
         else
-          printf -- '[failure]\nLogging file located at "%s" ... Exiting prematurely!\n' "${logger_path}"
+          printf -- '[FAILURE] (exiting prematurely)\n'
           exit 255
         fi
 
@@ -89,18 +89,33 @@ function apt_install_packages() {
 #
 
 function install() {
+  local remote_path='https://github.com/koalaman/shellcheck.git'
+  local bld_org_bin='.cabal-sandbox/bin/shellcheck'
+  local source_path
   local script_path
   local logger_path
+  local bld_beg_sec
+  local bld_end_sec
 
-  if ! script_path="$(get_self_dirpath)"; then
-    printf -- 'Failure to resolve locater executable to resolve path "%s" ... Exiting prematurely!\n' "${BASH_SOURCE[0]}"
+  printf '# Working to initialize installer script ...\n'
+
+  printf '  - Finding the absolute directory path of "%s" file (this script) ... ' "$(basename "${BASH_SOURCE[0]}")"
+
+  if script_path="$(get_self_dirpath)"; then
+    printf -- '[SUCCESS] (resolved to "%s")\n' "${script_path}/$(basename "${BASH_SOURCE[0]}")"
+  else
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
+  source_path="${script_path}/src"
+
+  printf '  - Seeking to enter appropriate working directory for this installation ... '
+
   if cd "${script_path}" 2> /dev/null; then
-    printf -- 'Located installation path of "%s" ...\n' "${script_path}"
+    printf -- '[SUCCESS] (changed directory to "%s")\n' "${script_path}"
   else
-    printf -- 'Failure entering installation path of "%s" ... Exiting prematurely!\n' "${script_path}"
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
@@ -108,52 +123,106 @@ function install() {
 
   logger_path="${script_path}/.shellcheck-install.log"
 
-  [[ ! -f ${logger_path} ]] && touch "${logger_path}"
+  printf '  - Testing that verbose logging can be written to file ... '
 
-  printf -- 'Logging installation to "%s" (tail this file for additional command output) ...\n' "${logger_path}"
+  if rm -fr "${logger_path:?}" &> /dev/null && touch "${logger_path:?}"; then
+    printf -- '[SUCCESS] (using "%s" file)\n' "${logger_path:?}"
+  else
+    printf -- '[FAILURE] (exiting prematurely)\n'
+    exit 255
+  fi
 
   apt_install_packages libgmp-dev haskell-platform
 
-  printf -- 'Working to clone repository "%s" ... ' "koalaman/shellcheck"
-  if git clone https://github.com/koalaman/shellcheck.git "${script_path}/src/" &> /dev/null; then
-    printf -- '[success]\n' "$(get_local_pkg_ver "${p}")"
+  printf -- '# Working to ready source for building ...\n'
+
+  printf '  - Seeking to make empty directory path for "shellcheck" source files ... '
+
+  if mkdir -p "${source_path}" &> /dev/null; then
+    printf -- '[SUCCESS] (created "%s" directory)\n' "${source_path}"
   else
-    printf -- '[failure]\nLogging file located at "%s" ... Exiting prematurely!\n' "${logger_path}"
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
-  if cd "${script_path}/src" 2> /dev/null; then
-    printf -- 'Located installation path of "%s" ...\n' "${script_path}/src"
+  printf -- '  - Copying git repository files (using remote URI "%s") ... ' "${remote_path}"
+
+  if git clone "${remote_path}" "${script_path}/src/" &> /dev/null; then
+    printf -- '[SUCCESS]\n'
   else
-    printf -- 'Failure entering installation path of "%s" ... Exiting prematurely!\n' "${script_path}/src"
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
-  printf -- 'Working to initialize canal sandbox ... '
+  printf -- '# Working to build source using sand-boxed cabal environment ...\n'
+
+  printf '  - Seeking to enter build directory ... '
+
+  if cd "${source_path}" 2> /dev/null; then
+    printf -- '[SUCCESS] (changed directory to "%s")\n' "${source_path}"
+  else
+    printf -- '[FAILURE] (exiting prematurely)\n'
+    exit 255
+  fi
+
+  printf -- '  - Working to update cabal package database ... '
+
+  if cabal update &> "${logger_path}"; then
+    printf -- '[SUCCESS]\n'
+  else
+    printf -- '[FAILURE] (exiting prematurely)\n'
+    exit 255
+  fi
+
+  printf -- '  - Working to initialize cabal sandbox ... '
+
   if cabal sandbox init &> "${logger_path}"; then
-    printf -- '[success]\n' "$(get_local_pkg_ver "${p}")"
+    printf -- '[SUCCESS] (created in "%s")\n' "${source_path}"
   else
-    printf -- '[failure]\nLogging file located at "%s" ... Exiting prematurely!\n' "${logger_path}"
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
-  printf -- 'Working to add source "%s" to canal sandbox ... ' "${script_path}/src"
-  if cabal sandbox add-source "${script_path}/src" &> "${logger_path}"; then
-    printf -- '[success]\n' "$(get_local_pkg_ver "${p}")"
+  printf -- '  - Working to add source to cabal sandbox ... '
+
+  if cabal sandbox add-source "${source_path}" &> "${logger_path}"; then
+    printf -- '[SUCCESS] (registered "%s")\n' "${source_path}"
   else
-    printf -- '[failure]\nLogging file located at "%s" ... Exiting prematurely!\n' "${logger_path}"
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
-  printf -- 'Working to install "shellscript" using cabal (this may take quite a while) ... '
+  bld_beg_sec="$(date +%s)"
+
+  printf -- '  - Working to build source using cabal (this may take a while) ... '
+
   if cabal install &> "${logger_path}"; then
-    printf -- '[success]\n' "$(get_local_pkg_ver "${p}")"
+    bld_end_sec="$(date +%s)"
+    printf -- '[SUCCESS] (took %d minutes and %d seconds)\n' \
+      "$(( (${bld_end_sec} - ${bld_beg_sec}) / 60 ))" \
+      "$(( (${bld_end_sec} - ${bld_beg_sec}) % 60 ))"
   else
-    printf -- '[failure]\nLogging file located at "%s" ... Exiting prematurely!\n' "${logger_path}"
+    printf -- '[FAILURE] (exiting prematurely)\n'
     exit 255
   fi
 
-  rm "${logger_path}" 2>/dev/null
+  printf -- '# Working to clean up environment following successful build ...\n'
+
+  printf '  - Seeking to delete log file "%s" ... ' "${logger_path}"
+
+  if rm "${logger_path}" 2>/dev/null; then
+    printf -- '[SUCCESS]\n'
+  else
+    printf -- '[FAILURE]\n'
+  fi
+
+  printf '  - Seeking to locate built executable for "shellcheck" ... '
+
+  if [[ -e "${source_path}/${bld_org_bin}" ]]; then
+    printf -- '[SUCCESS] (found as "%s")\n' "${source_path}/${bld_org_bin}"
+  else
+    printf -- '[FAILURE]\n'
+  fi
 }
 
 #

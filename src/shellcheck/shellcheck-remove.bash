@@ -31,18 +31,18 @@ function main() {
   local script_path
 
   if ! script_path="$(get_self_dirpath)"; then
-    printf -- 'Failure to resolve locater executable to resolve path "%s" ... Exiting prematurely!\n' "${BASH_SOURCE[0]}"
+    printf -- '# Failure to resolve locater executable to resolve path "%s" ... Exiting prematurely!\n' "${BASH_SOURCE[0]}"
     exit 255
   fi
 
-  printf -- 'Working to clean up prior "shellcheck" build files in "%s" ...\n' "${script_path}"
+  printf -- '# Working to clean up prior "shellcheck" build files in "%s" ...\n' "${script_path}"
 
   for p in src; do
-    printf -- 'Removal of prior installation path "%s" in progress ... ' "${script_path:?}/${p}"
+    printf -- '  - Removal of prior installation path "%s" in progress ... ' "${script_path:?}/${p}"
     if rm -fr "${script_path:?}/${p}" 2> /dev/null; then
-      printf -- '[success]\n'
+      printf -- '[SUCCESS]\n'
     else
-      printf -- '[failure] (continuing regardless)\n' "${logger_path}"
+      printf -- '[FAILURE] (continuing regardless)\n' "${logger_path}"
     fi
   done
 }
