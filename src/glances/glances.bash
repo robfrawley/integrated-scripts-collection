@@ -36,9 +36,26 @@ function get_self_dirpath() {
 #
 
 function install_and_launch() {
-    local name_bin='glances'
-    local inst_bin="$(get_self_dirpath)/${name_bin}-install.bash"
-    local main_bin="$(get_self_dirpath)/bin/${name_bin}"
+    local    name_bin='glances'
+    local    inst_bin="$(get_self_dirpath)/${name_bin}-install.bash"
+    local    main_bin="$(get_self_dirpath)/bin/${name_bin}"
+    local -a main_def=('--disable-plugins' 'amps,cloud,connections,docker,gpu,raid,folders,network,diskio,alert,ports' '--disable-webui' '--percpu' '--disable-history' '--enable-process-extended' '--time' '2' '--hide-kernel-threads' '--disable-check-update')
+    local -a main_opt=("${@}")
+    local -a used_opt=("${main_opt[@]}")
+    local    hide_err=0
+
+    for o in "${main_opt[@]}"; do
+      if [[ "${o}" == '--null-redirect-stderr' ]] || [[ "${o}" == '-N' ]]; then
+        hide_err=1
+        continue
+      fi
+
+      if [[ "${o}" == '--defaults' ]] || [[ "${o}" == '-D' ]]; then
+        used_opt=("${main_def[@]}")
+        hide_err=1
+        continue
+      fi
+    done
 
     if [[ ! -e "${main_bin}" ]]; then
         printf -- 'Unable to execute the "%s" executable at "%s".\n' "${name_bin}" "${inst_bin}"
@@ -60,7 +77,11 @@ function install_and_launch() {
         fi
     fi
 
-    "${main_bin}" "${@}"
+    if [[ ${hide_err} -eq 1 ]]; then
+      "${main_bin}" "${used_opt[@]}" 2> /dev/null
+    else
+      "${main_bin}" "${used_opt[@]}"
+    fi
 }
 
 #
