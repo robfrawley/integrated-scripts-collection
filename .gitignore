@@ -3,5 +3,10 @@
 /src/glances/lib
 /src/glances/share
 /src/glances/.glances-install.log
+/src/bpytop/bin
+/src/bpytop/include
+/src/bpytop/lib
+/src/bpytop/share
+/src/bpytop/.bpytop-install.log
 /src/shellcheck/src/
 /src/shellcheck/.shellcheck-install.log
